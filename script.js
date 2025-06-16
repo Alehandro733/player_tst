@@ -1,4 +1,5 @@
-let sourcesData = {}; // имя-файла → { timings: [], textLines: [], audio: "" }
+let sourcesData = {};         // имя-файла → { timings: [], textLines: [], audio: "" }
+let sourceDivs   = {};        // имя-файла → контейнер с уже отрендеренным текстом
 let currentSource = null;
 let wordsStartReadTimings = [];
 let wordsStartReadTimingsLength = 0;
@@ -17,62 +18,76 @@ function parseTxt(data) {
     if (!mode) continue;
     if (mode === "timings") {
       timings = t.split(",").map(parseFloat);
-    } else if (mode === "text") {
+    } else {
       textLines.push(line);
     }
   }
   return { timings, textLines };
 }
 
-// Рендерит на странице текст и спаны для выбранного источника
-function renderSource(filename) {
+// Рендерит внутрь переданного контейнера текст и спаны для выбранного источника
+function renderSourceToDiv(container, filename) {
   const { timings, textLines } = sourcesData[filename];
-  const container = document.getElementById("text-container");
   container.innerHTML = "";
-  wordSpans = [];
-
   let idCounter = 0;
+
   textLines.forEach(line => {
     const p = document.createElement("p");
     line.split(/\s+/).forEach(word => {
       if (!word) return;
       const span = document.createElement("span");
-      span.id = "sp" + idCounter;
+      span.id = `sp-${filename}-${idCounter}`;
       span.textContent = word + " ";
       span.style.transition = "700ms ease-in";
       span.style.backgroundColor = "antiquewhite";
       span.style.cursor = "pointer";
 
+      // при клике — перескакиваем в аудио
       const wordIndex = idCounter;
       span.addEventListener("click", () => {
-        if (GPlayer && wordsStartReadTimings[wordIndex] != null) {
-          GPlayer.currentTime = wordsStartReadTimings[wordIndex];
+        if (GPlayer && timings[wordIndex] != null) {
+          GPlayer.currentTime = timings[wordIndex];
           GPlayer.play();
         }
       });
 
       p.appendChild(span);
-      wordSpans.push(span);
       idCounter++;
     });
     container.appendChild(p);
   });
-
-  wordsStartReadTimings = timings;
-  wordsStartReadTimingsLength = timings.length;
 }
 
-// Загружает список источников из data/soucres.json и первый аудио
+// После переключения показываем нужный <div>, собираем новые wordSpans/timings
+function activateSource(filename) {
+  if (currentSource) {
+    sourceDivs[currentSource].style.display = "none";
+  }
+  const div = sourceDivs[filename];
+  div.style.display = "block";
+
+  // обновляем тайминги и спаны
+  const { timings } = sourcesData[filename];
+  wordsStartReadTimings = timings;
+  wordsStartReadTimingsLength = timings.length;
+
+  // находим все span’ы внутри нашего div
+  wordSpans = Array.from(div.querySelectorAll("span"));
+
+  currentSource = filename;
+}
+
+// Основная загрузка
 async function loadAllSources() {
   // JSON называется "soucres.json"
   const resp = await fetch("./data/soucres.json");
-  if (!resp.ok) {
-    throw new Error(`Не удалось загрузить список источников: ${resp.status}`);
-  }
+  if (!resp.ok) throw new Error(`Ошибка загрузки sources.json: ${resp.status}`);
   const sourcesList = await resp.json();
 
-  // парсим все txt
-  for (const item of sourcesList) {
+  // парсим все txt и готовим места под них
+  const containerAll = document.getElementById("text-container");
+  for (const [idx, item] of sourcesList.entries()) {
+    // fetch txt
     const r2 = await fetch(`./data/${item.text}`);
     if (!r2.ok) {
       console.error(`Не удалось загрузить ${item.text}: ${r2.status}`);
@@ -83,8 +98,17 @@ async function loadAllSources() {
       ...parseTxt(raw),
       audio: item.audio
     };
+
+    // создаём скрытый div
+    const div = document.createElement("div");
+    div.id = `div-${item.text}`;
+    div.style.display = "none";
+    containerAll.appendChild(div);
+    renderSourceToDiv(div, item.text);
+    sourceDivs[item.text] = div;
   }
 
+  // селект и его опции
   const select = document.getElementById("sourceSelect");
   sourcesList.forEach((item, idx) => {
     const opt = document.createElement("option");
@@ -94,15 +118,16 @@ async function loadAllSources() {
     select.appendChild(opt);
   });
 
-  // первый источник – загружаем его текст и аудио
+  // инициализируем первый источник и аудио
   currentSource = sourcesList[0].text;
+  activateSource(currentSource);
+  // загружаем аудио только один раз
   loadAudioFor(currentSource);
-  renderSource(currentSource);
 
-  // при смене select: только обновляем текст
+  // обработчик смены
   select.addEventListener("change", () => {
-    currentSource = select.value;
-    renderSource(currentSource);
+    activateSource(select.value);
+    // аудио не трогаем!
   });
 }
 
@@ -113,7 +138,7 @@ function loadAudioFor(sourceName) {
   GPlayer.load();
 }
 
-// Бинарный поиск индекса слова по времени
+// бинарный поиск индекса по текущему времени
 function findIndexBinary(t) {
   let l = 0, r = wordsStartReadTimingsLength - 1;
   if (t < wordsStartReadTimings[0]) return -1;
@@ -131,12 +156,14 @@ function step() {
   if (playerTime > 0.001 && playerTime !== prevTiming) {
     const idx = findIndexBinary(playerTime);
     if (idx !== prevIndex) {
+      // сброс старого
       if (prevIndex >= 0 && wordSpans[prevIndex]) {
         const prev = wordSpans[prevIndex];
         prev.style.transition = isFadingEffect ? "700ms ease-in" : "";
         prev.style.backgroundColor = "antiquewhite";
         prev.classList.remove("fake-bold");
       }
+      // подсветка нового
       if (idx >= 0 && wordSpans[idx]) {
         const curr = wordSpans[idx];
         curr.style.transition = isFadingEffect ? "100ms ease-out" : "";
@@ -147,7 +174,7 @@ function step() {
     }
     prevTiming = playerTime;
   }
-  setTimeout(step, 5);
+  requestAnimationFrame(step);
 }
 
 // Инициализация
@@ -160,17 +187,16 @@ window.addEventListener("DOMContentLoaded", async () => {
   GPlayer = document.querySelector(".green-audio-player audio");
 
   await loadAllSources();
-  setTimeout(step, 5);
+  step();
 });
 
-// Переключатели скорости и эффекта (jQuery)
+// переключатели скорости и эффектов (jQuery)
 $(document).ready(function () {
   GPlayer.playbackRate = 1.0;
   $("#toggle-button3, #toggle-button-effect").addClass("active");
 
   $(".exclusive-turnon-toggle-button").click(function () {
-    const id = this.id;
-    switch (id) {
+    switch (this.id) {
       case "toggle-button1":         GPlayer.playbackRate = 0.5;  break;
       case "toggle-button2":         GPlayer.playbackRate = 0.75; break;
       case "toggle-button3":         GPlayer.playbackRate = 1.0;  break;
