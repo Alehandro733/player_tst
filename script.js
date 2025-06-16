@@ -58,24 +58,36 @@ function renderSourceToDiv(container, filename) {
   });
 }
 
-// После переключения показываем нужный <div>, собираем новые wordSpans/timings
 function activateSource(filename) {
+  // 1) Снимаем подсветку со старых span’ов
+  if (wordSpans.length) {
+    wordSpans.forEach(span => {
+      span.style.transition      = isFadingEffect ? "700ms ease-in" : "";
+      span.style.backgroundColor = "antiquewhite";
+      span.classList.remove("fake-bold");
+    });
+  }
+
+  // 2) Сбрасываем индексы, чтобы step() сразу пересчитал highlight
+  prevIndex   = -1;
+  prevTiming  = -1;
+
+  // 3) Прячем старый div и показываем новый
   if (currentSource) {
     sourceDivs[currentSource].style.display = "none";
   }
   const div = sourceDivs[filename];
   div.style.display = "block";
 
-  // обновляем тайминги и спаны
+  // 4) Обновляем массив timings и список span’ов
   const { timings } = sourcesData[filename];
-  wordsStartReadTimings = timings;
+  wordsStartReadTimings       = timings;
   wordsStartReadTimingsLength = timings.length;
-
-  // находим все span’ы внутри нашего div
   wordSpans = Array.from(div.querySelectorAll("span"));
 
   currentSource = filename;
 }
+
 
 // Основная загрузка
 async function loadAllSources() {
