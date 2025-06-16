@@ -80,13 +80,13 @@ function activateSource(filename) {
 // Основная загрузка
 async function loadAllSources() {
   // JSON называется "sources.json"
-  const resp = await fetch("./data/soucres.json");
+  const resp = await fetch("./data/sources.json");
   if (!resp.ok) throw new Error(`Ошибка загрузки sources.json: ${resp.status}`);
   const sourcesList = await resp.json();
 
   // парсим все txt и готовим места под них
   const containerAll = document.getElementById("text-container");
-  for (const [idx, item] of sourcesList.entries()) {
+  for (const item of sourcesList) {
     // fetch txt
     const r2 = await fetch(`./data/${item.text}`);
     if (!r2.ok) {
