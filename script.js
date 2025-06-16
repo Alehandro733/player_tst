@@ -60,18 +60,29 @@ function renderSource(filename) {
   wordsStartReadTimingsLength = timings.length;
 }
 
-// Загружает список источников из sources.json
+// Загружает список источников из JSON-файла
 async function loadAllSources() {
-  const sourcesList = await fetch("data/sources.json").then(r => r.json());
+  const resp = await fetch("./data/sources.json");
+  if (!resp.ok) {
+    throw new Error(`Не удалось загрузить список источников: ${resp.status}`);
+  }
+  const sourcesList = await resp.json();
 
+  // последовательно парсим каждый текстовый источник
   for (const item of sourcesList) {
-    const raw = await fetch("data/" + item.text).then(r => r.text());
+    const r2 = await fetch(`./data/${item.text}`);
+    if (!r2.ok) {
+      console.error(`Не удалось загрузить ${item.text}: ${r2.status}`);
+      continue;
+    }
+    const raw = await r2.text();
     sourcesData[item.text] = {
       ...parseTxt(raw),
       audio: item.audio
     };
   }
 
+  // заполняем селект
   const select = document.getElementById("sourceSelect");
   sourcesList.forEach((item, idx) => {
     const opt = document.createElement("option");
@@ -81,6 +92,7 @@ async function loadAllSources() {
     select.appendChild(opt);
   });
 
+  // загружаем и рендерим первый
   currentSource = sourcesList[0].text;
   loadAudioFor(currentSource);
   renderSource(currentSource);
@@ -94,7 +106,7 @@ async function loadAllSources() {
 
 // Загружает нужный аудиофайл
 function loadAudioFor(sourceName) {
-  const audioSrc = "data/" + sourcesData[sourceName].audio;
+  const audioSrc = `./data/${sourcesData[sourceName].audio}`;
   GPlayer.src = audioSrc;
   GPlayer.load();
 }
@@ -117,12 +129,14 @@ function step() {
   if (playerTime > 0.001 && playerTime !== prevTiming) {
     const idx = findIndexBinary(playerTime);
     if (idx !== prevIndex) {
+      // сброс старого
       if (prevIndex >= 0 && wordSpans[prevIndex]) {
         const prev = wordSpans[prevIndex];
         prev.style.transition = isFadingEffect ? "700ms ease-in" : "";
         prev.style.backgroundColor = "antiquewhite";
         prev.classList.remove("fake-bold");
       }
+      // подсветка нового
       if (idx >= 0 && wordSpans[idx]) {
         const curr = wordSpans[idx];
         curr.style.transition = isFadingEffect ? "100ms ease-out" : "";
