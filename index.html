@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jack London – The Call of the Wild, Ch1 part 1</title>
+  <link href="./style.css" rel="stylesheet">
+  <link href="./green-audio-player.css" rel="stylesheet">
+</head>
+<body>
+  <div class="header"></div>
+
+  <!-- flex-панель для всех контролов -->
+  <div class="controls-panel">
+
+    <!-- контейнер и audio-плеер -->
+    <div class="gplayer green-audio-player" id="player0">
+      <audio crossorigin preload="metadata">
+        <source src="data/JL.mp3" type="audio/mpeg">
+      </audio>
+    </div>
+
+    <!-- переключатели скорости -->
+    <div class="exclusive-turnon-toggle">
+      <button class="exclusive-turnon-toggle-button" id="toggle-button1">Slowest</button>
+      <button class="exclusive-turnon-toggle-button" id="toggle-button2">Slower</button>
+      <button class="exclusive-turnon-toggle-button active" id="toggle-button3">Normal</button>
+    </div>
+
+    <!-- переключатели эффекта -->
+    <div class="exclusive-turnon-toggle">
+      <button class="exclusive-turnon-toggle-button active" id="toggle-button-effect">Effect</button>
+      <button class="exclusive-turnon-toggle-button" id="toggle-button-noeffect">No effect</button>
+    </div>
+
+    <!-- селектор источника (.txt в папке data/) -->
+    <div class="source-selector" style="margin-left: 16px;">
+      <label for="sourceSelect">Source:</label>
+      <select id="sourceSelect"></select>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <div id="text-container" class="booktext"></div>
+
+  <!-- порядок подключения: сначала jQuery, потом плеер, потом наш скрипт -->
+  <script src="./jquery.min.js"></script>
+  <script src="./green-audio-player.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>

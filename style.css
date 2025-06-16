@@ -1,0 +1,121 @@
+@font-face {
+  font-family: CaslonPro;
+  src: url("../fonts/ACaslonPro-Regular.otf") format("opentype");
+}
+
+div.header {
+  height: 50px;
+  position: fixed; /* Фиксированное положение вверху */
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: white; /* Фон для обеспечения читаемости */
+  z-index: 1000; /* Гарантируем, что элемент будет поверх остальных */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Тень для лучшей видимости */
+}
+
+div.divider {
+  clear: both;
+  height: 50px;
+}
+
+div.booktext {
+  margin-top: 60px;
+  padding: 20px;
+  background-color: antiquewhite;
+  font-family: CaslonPro;
+  font-size: 26pt;
+}
+
+span {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  padding-right: 2px;
+}
+
+.exclusive-turnon-toggle {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px 0 rgba(165, 170, 174, 0.25);
+  border-radius: 24px;
+  display: inline-block;
+  overflow: hidden;
+  display: inline-flex;
+  flex-direction: row;
+  transition: all 200ms ease;
+}
+
+.exclusive-turnon-toggle-button {
+  font-family: "Roboto", sans-serif;
+  font-size: 16px;
+  line-height: 18px;
+  color: #55606e;
+  border-radius: 22px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  background-color: transparent;
+  border: 0px solid transparent;
+  margin: 2px;
+  padding-left: 45px;
+  padding-right: 45px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.exclusive-turnon-toggle-button.active {
+  background-image: linear-gradient(
+    90deg,
+    rgba(68, 191, 163, 1) 0%,
+    rgba(68, 191, 163, 1) 35%,
+    rgba(68, 191, 163, 1) 100%
+  );
+  border: 0px solid rgba(207, 207, 207, 0.6);
+  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.1);
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s ease-in;
+}
+
+/* 1) Flex-контейнер для верхней панели */
+.controls-panel {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* расстояние между плеером и переключателями */
+  padding: 20px; /* внутренний отступ */
+  background-color: #fff; /* фон панели */
+  border-radius: 12px; /* скругление, как у плеера */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: fixed; /* Фиксированное положение вверху */
+  top: 60px; /* Расположить ниже шапки */
+  left: 0;
+  width: 100%;
+  z-index: 999; /* Чуть ниже шапки */
+}
+
+/* 2) Сброс float перед текстом */
+.divider {
+  clear: both;
+  height: 20px;
+}
+
+/* 3) Плотные межстрочные отступы */
+#text-container p {
+  margin: 0;
+  margin-bottom: 0.5em; /* регулирует расстояние между строками */
+  line-height: 1.4; /* высота строки */
+}
+
+.fake-bold {
+  font-weight: normal !important;
+  -webkit-text-stroke-width: 0.5px;
+  -webkit-text-stroke-color: black;
+  text-stroke-width: 0.5px;
+  text-stroke-color: black;
+}
+
+/* Добавляем отступ для тела страницы, чтобы контент не скрывался за шапкой */
+body {
+  padding-top: 120px; /* Отрегулируйте это значение в зависимости от размера шапки */
+}
