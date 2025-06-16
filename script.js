@@ -42,6 +42,7 @@ function renderSource(filename) {
       span.style.transition = "700ms ease-in";
       span.style.backgroundColor = "antiquewhite";
       span.style.cursor = "pointer";
+
       const wordIndex = idCounter;
       span.addEventListener("click", () => {
         if (GPlayer && wordsStartReadTimings[wordIndex] != null) {
@@ -49,6 +50,7 @@ function renderSource(filename) {
           GPlayer.play();
         }
       });
+
       p.appendChild(span);
       wordSpans.push(span);
       idCounter++;
@@ -60,15 +62,16 @@ function renderSource(filename) {
   wordsStartReadTimingsLength = timings.length;
 }
 
-// Загружает список источников из JSON-файла
+// Загружает список источников из data/soucres.json и первый аудио
 async function loadAllSources() {
-  const resp = await fetch("./data/sources.json");
+  // JSON называется "soucres.json"
+  const resp = await fetch("./data/soucres.json");
   if (!resp.ok) {
     throw new Error(`Не удалось загрузить список источников: ${resp.status}`);
   }
   const sourcesList = await resp.json();
 
-  // последовательно парсим каждый текстовый источник
+  // парсим все txt
   for (const item of sourcesList) {
     const r2 = await fetch(`./data/${item.text}`);
     if (!r2.ok) {
@@ -82,7 +85,6 @@ async function loadAllSources() {
     };
   }
 
-  // заполняем селект
   const select = document.getElementById("sourceSelect");
   sourcesList.forEach((item, idx) => {
     const opt = document.createElement("option");
@@ -92,38 +94,24 @@ async function loadAllSources() {
     select.appendChild(opt);
   });
 
-  // загружаем и рендерим первый
+  // первый источник – загружаем его текст и аудио
   currentSource = sourcesList[0].text;
   loadAudioFor(currentSource);
   renderSource(currentSource);
 
+  // при смене select: только обновляем текст
   select.addEventListener("change", () => {
     currentSource = select.value;
-    loadAudioFor(currentSource);
     renderSource(currentSource);
   });
 }
 
-// Загружает нужный аудиофайл
+// Загружает нужный аудиофайл единожды
 function loadAudioFor(sourceName) {
-  const newSrc = `./data/${sourcesData[sourceName].audio}`;
-  // если тот же файл — ничего не делаем
-  if (GPlayer.src.endsWith(newSrc)) return;
-
-  const prevTime    = GPlayer.currentTime;
-  const wasPlaying = !GPlayer.paused;
-
-  GPlayer.src = newSrc;
+  const audioSrc = `./data/${sourcesData[sourceName].audio}`;
+  GPlayer.src = audioSrc;
   GPlayer.load();
-
-  // как только метаданные загрузятся — восстанавливаем позицию и, при необходимости, play
-  GPlayer.addEventListener("loadedmetadata", function restore() {
-    GPlayer.currentTime = prevTime;
-    if (wasPlaying) GPlayer.play();
-    GPlayer.removeEventListener("loadedmetadata", restore);
-  });
 }
-
 
 // Бинарный поиск индекса слова по времени
 function findIndexBinary(t) {
@@ -143,14 +131,12 @@ function step() {
   if (playerTime > 0.001 && playerTime !== prevTiming) {
     const idx = findIndexBinary(playerTime);
     if (idx !== prevIndex) {
-      // сброс старого
       if (prevIndex >= 0 && wordSpans[prevIndex]) {
         const prev = wordSpans[prevIndex];
         prev.style.transition = isFadingEffect ? "700ms ease-in" : "";
         prev.style.backgroundColor = "antiquewhite";
         prev.classList.remove("fake-bold");
       }
-      // подсветка нового
       if (idx >= 0 && wordSpans[idx]) {
         const curr = wordSpans[idx];
         curr.style.transition = isFadingEffect ? "100ms ease-out" : "";
@@ -164,7 +150,7 @@ function step() {
   setTimeout(step, 5);
 }
 
-// Инициализация плеера и загрузка данных
+// Инициализация
 window.addEventListener("DOMContentLoaded", async () => {
   new GreenAudioPlayer(".gplayer", {
     showTooltips: true,
@@ -177,7 +163,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   setTimeout(step, 5);
 });
 
-// Переключатели скорости и эффектов (jQuery)
+// Переключатели скорости и эффекта (jQuery)
 $(document).ready(function () {
   GPlayer.playbackRate = 1.0;
   $("#toggle-button3, #toggle-button-effect").addClass("active");
@@ -185,11 +171,11 @@ $(document).ready(function () {
   $(".exclusive-turnon-toggle-button").click(function () {
     const id = this.id;
     switch (id) {
-      case "toggle-button1": GPlayer.playbackRate = 0.5; break;
-      case "toggle-button2": GPlayer.playbackRate = 0.75; break;
-      case "toggle-button3": GPlayer.playbackRate = 1.0; break;
-      case "toggle-button-effect": isFadingEffect = true; break;
-      case "toggle-button-noeffect": isFadingEffect = false; break;
+      case "toggle-button1":         GPlayer.playbackRate = 0.5;  break;
+      case "toggle-button2":         GPlayer.playbackRate = 0.75; break;
+      case "toggle-button3":         GPlayer.playbackRate = 1.0;  break;
+      case "toggle-button-effect":   isFadingEffect = true;       break;
+      case "toggle-button-noeffect": isFadingEffect = false;      break;
     }
     $(this).addClass("active").siblings().removeClass("active");
   });
