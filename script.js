@@ -1,6 +1,4 @@
-// script.js
-
-let sourcesData = {};      // запись: имя-файла → { timings: [], textLines: [] }
+let sourcesData = {}; // имя-файла → { timings: [], textLines: [], audio: "" }
 let currentSource = null;
 let wordsStartReadTimings = [];
 let wordsStartReadTimingsLength = 0;
@@ -38,24 +36,19 @@ function renderSource(filename) {
     const p = document.createElement("p");
     line.split(/\s+/).forEach(word => {
       if (!word) return;
-
       const span = document.createElement("span");
       span.id = "sp" + idCounter;
       span.textContent = word + " ";
-      span.style.transition      = "700ms ease-in";
+      span.style.transition = "700ms ease-in";
       span.style.backgroundColor = "antiquewhite";
-
-      // --- делаем слово кликабельным ---
-      const wordIndex = idCounter;               // сохраняем индекс слова
-      span.style.cursor = "pointer";             // показываем, что это кнопка
+      span.style.cursor = "pointer";
+      const wordIndex = idCounter;
       span.addEventListener("click", () => {
         if (GPlayer && wordsStartReadTimings[wordIndex] != null) {
           GPlayer.currentTime = wordsStartReadTimings[wordIndex];
           GPlayer.play();
         }
       });
-      // --- конец новой логики ---
-
       p.appendChild(span);
       wordSpans.push(span);
       idCounter++;
@@ -63,33 +56,11 @@ function renderSource(filename) {
     container.appendChild(p);
   });
 
-  wordsStartReadTimings        = timings;
-  wordsStartReadTimingsLength  = timings.length;
+  wordsStartReadTimings = timings;
+  wordsStartReadTimingsLength = timings.length;
 }
 
-// Загружает список всех .txt из папки data/, парсит и заполняет селект
-// async function loadAllSources() {
-//   // Ожидаем, что сервер вернёт HTML-листинг директории
-//   const res  = await fetch("data/");
-//   const html = await res.text();
-//   const doc  = new DOMParser().parseFromString(html, "text/html");
-//   const links = Array.from(doc.querySelectorAll("a[href$='.txt']"))
-//                      .map(a => a.getAttribute("href"));
-
-//   for (const name of links) {
-//     const raw = await fetch("data/" + name).then(r => r.text());
-//     sourcesData[name] = parseTxt(raw);
-//   }
-
-//   const select = document.getElementById("sourceSelect");
-//   links.forEach((name, idx) => {
-//     const opt = document.createElement("option");
-//     opt.value = name;
-//     opt.textContent = name;
-//     if (idx === 0) opt.selected = true;
-//     select.appendChild(opt);
-//   });
-
+// Загружает список источников из sources.json
 async function loadAllSources() {
   const sourcesList = await fetch("data/sources.json").then(r => r.json());
 
@@ -121,20 +92,11 @@ async function loadAllSources() {
   });
 }
 
-// загружает нужный аудиофайл
+// Загружает нужный аудиофайл
 function loadAudioFor(sourceName) {
   const audioSrc = "data/" + sourcesData[sourceName].audio;
   GPlayer.src = audioSrc;
   GPlayer.load();
-}
-
-  currentSource = links[0];
-  renderSource(currentSource);
-
-  select.addEventListener("change", () => {
-    currentSource = select.value;
-    renderSource(currentSource);
-  });
 }
 
 // Бинарный поиск индекса слова по времени
@@ -144,7 +106,7 @@ function findIndexBinary(t) {
   while (l < r) {
     const m = (l + r) >> 1;
     if (t > wordsStartReadTimings[m]) l = m + 1;
-    else                             r = m;
+    else r = m;
   }
   return t > wordsStartReadTimings[l] ? l : l - 1;
 }
@@ -155,17 +117,15 @@ function step() {
   if (playerTime > 0.001 && playerTime !== prevTiming) {
     const idx = findIndexBinary(playerTime);
     if (idx !== prevIndex) {
-      // снять подсветку старого
       if (prevIndex >= 0 && wordSpans[prevIndex]) {
         const prev = wordSpans[prevIndex];
-        prev.style.transition      = isFadingEffect ? "700ms ease-in" : "";
+        prev.style.transition = isFadingEffect ? "700ms ease-in" : "";
         prev.style.backgroundColor = "antiquewhite";
         prev.classList.remove("fake-bold");
       }
-      // подсветить новое
       if (idx >= 0 && wordSpans[idx]) {
         const curr = wordSpans[idx];
-        curr.style.transition      = isFadingEffect ? "100ms ease-out" : "";
+        curr.style.transition = isFadingEffect ? "100ms ease-out" : "";
         curr.style.backgroundColor = "#FFD300";
         curr.classList.add("fake-bold");
       }
@@ -176,9 +136,8 @@ function step() {
   setTimeout(step, 5);
 }
 
-// Инициализация плеера, загрузка источников и старт подсветки
+// Инициализация плеера и загрузка данных
 window.addEventListener("DOMContentLoaded", async () => {
-  // init audio player
   new GreenAudioPlayer(".gplayer", {
     showTooltips: true,
     showDownloadButton: false,
@@ -186,14 +145,11 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   GPlayer = document.querySelector(".green-audio-player audio");
 
-  // загрузить и отрисовать все источники
   await loadAllSources();
-
-  // запустить цикл подсветки
   setTimeout(step, 5);
 });
 
-// переключатели скорости и эффекта (jQuery)
+// Переключатели скорости и эффектов (jQuery)
 $(document).ready(function () {
   GPlayer.playbackRate = 1.0;
   $("#toggle-button3, #toggle-button-effect").addClass("active");
@@ -201,11 +157,11 @@ $(document).ready(function () {
   $(".exclusive-turnon-toggle-button").click(function () {
     const id = this.id;
     switch (id) {
-      case "toggle-button1":         GPlayer.playbackRate = 0.5;  break;
-      case "toggle-button2":         GPlayer.playbackRate = 0.75; break;
-      case "toggle-button3":         GPlayer.playbackRate = 1.0;  break;
-      case "toggle-button-effect":   isFadingEffect = true;       break;
-      case "toggle-button-noeffect": isFadingEffect = false;      break;
+      case "toggle-button1": GPlayer.playbackRate = 0.5; break;
+      case "toggle-button2": GPlayer.playbackRate = 0.75; break;
+      case "toggle-button3": GPlayer.playbackRate = 1.0; break;
+      case "toggle-button-effect": isFadingEffect = true; break;
+      case "toggle-button-noeffect": isFadingEffect = false; break;
     }
     $(this).addClass("active").siblings().removeClass("active");
   });
