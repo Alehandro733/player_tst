@@ -106,10 +106,24 @@ async function loadAllSources() {
 
 // Загружает нужный аудиофайл
 function loadAudioFor(sourceName) {
-  const audioSrc = `./data/${sourcesData[sourceName].audio}`;
-  GPlayer.src = audioSrc;
+  const newSrc = `./data/${sourcesData[sourceName].audio}`;
+  // если тот же файл — ничего не делаем
+  if (GPlayer.src.endsWith(newSrc)) return;
+
+  const prevTime    = GPlayer.currentTime;
+  const wasPlaying = !GPlayer.paused;
+
+  GPlayer.src = newSrc;
   GPlayer.load();
+
+  // как только метаданные загрузятся — восстанавливаем позицию и, при необходимости, play
+  GPlayer.addEventListener("loadedmetadata", function restore() {
+    GPlayer.currentTime = prevTime;
+    if (wasPlaying) GPlayer.play();
+    GPlayer.removeEventListener("loadedmetadata", restore);
+  });
 }
+
 
 // Бинарный поиск индекса слова по времени
 function findIndexBinary(t) {
