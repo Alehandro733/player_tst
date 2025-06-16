@@ -1,0 +1,14 @@
+[
+  {
+    "text": "1Original.txt",
+    "audio": "JL.mp3"
+  },
+  {
+    "text": "MFA_Align.txt",
+    "audio": "JL.mp3"
+  },
+  {
+    "text": "Whisper_recogn.txt",
+    "audio": "JL.mp3"
+  }
+]
