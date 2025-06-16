@@ -68,27 +68,65 @@ function renderSource(filename) {
 }
 
 // Загружает список всех .txt из папки data/, парсит и заполняет селект
-async function loadAllSources() {
-  // Ожидаем, что сервер вернёт HTML-листинг директории
-  const res  = await fetch("data/");
-  const html = await res.text();
-  const doc  = new DOMParser().parseFromString(html, "text/html");
-  const links = Array.from(doc.querySelectorAll("a[href$='.txt']"))
-                     .map(a => a.getAttribute("href"));
+// async function loadAllSources() {
+//   // Ожидаем, что сервер вернёт HTML-листинг директории
+//   const res  = await fetch("data/");
+//   const html = await res.text();
+//   const doc  = new DOMParser().parseFromString(html, "text/html");
+//   const links = Array.from(doc.querySelectorAll("a[href$='.txt']"))
+//                      .map(a => a.getAttribute("href"));
 
-  for (const name of links) {
-    const raw = await fetch("data/" + name).then(r => r.text());
-    sourcesData[name] = parseTxt(raw);
+//   for (const name of links) {
+//     const raw = await fetch("data/" + name).then(r => r.text());
+//     sourcesData[name] = parseTxt(raw);
+//   }
+
+//   const select = document.getElementById("sourceSelect");
+//   links.forEach((name, idx) => {
+//     const opt = document.createElement("option");
+//     opt.value = name;
+//     opt.textContent = name;
+//     if (idx === 0) opt.selected = true;
+//     select.appendChild(opt);
+//   });
+
+async function loadAllSources() {
+  const sourcesList = await fetch("data/sources.json").then(r => r.json());
+
+  for (const item of sourcesList) {
+    const raw = await fetch("data/" + item.text).then(r => r.text());
+    sourcesData[item.text] = {
+      ...parseTxt(raw),
+      audio: item.audio
+    };
   }
 
   const select = document.getElementById("sourceSelect");
-  links.forEach((name, idx) => {
+  sourcesList.forEach((item, idx) => {
     const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
+    opt.value = item.text;
+    opt.textContent = item.text;
     if (idx === 0) opt.selected = true;
     select.appendChild(opt);
   });
+
+  currentSource = sourcesList[0].text;
+  loadAudioFor(currentSource);
+  renderSource(currentSource);
+
+  select.addEventListener("change", () => {
+    currentSource = select.value;
+    loadAudioFor(currentSource);
+    renderSource(currentSource);
+  });
+}
+
+// загружает нужный аудиофайл
+function loadAudioFor(sourceName) {
+  const audioSrc = "data/" + sourcesData[sourceName].audio;
+  GPlayer.src = audioSrc;
+  GPlayer.load();
+}
 
   currentSource = links[0];
   renderSource(currentSource);
