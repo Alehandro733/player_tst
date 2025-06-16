@@ -79,7 +79,7 @@ function activateSource(filename) {
 
 // Основная загрузка
 async function loadAllSources() {
-  // JSON называется "soucres.json"
+  // JSON называется "sources.json"
   const resp = await fetch("./data/soucres.json");
   if (!resp.ok) throw new Error(`Ошибка загрузки sources.json: ${resp.status}`);
   const sourcesList = await resp.json();
